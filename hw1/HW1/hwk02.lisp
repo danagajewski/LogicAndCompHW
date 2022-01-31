@@ -318,6 +318,8 @@ they are permutations of each other and nil otherwise.
 |#
 (defdata swaps (alistof nat nat))
 
+
+
 (definec finder (element :all l :tl acc :nat) :nat
   (cond
    ((lendp l) acc) ; I know this looks bad but it will never hit this. Used to pass termination contract.
@@ -325,13 +327,19 @@ they are permutations of each other and nil otherwise.
    (t (finder element (rest l) (1+ acc)))))
 (check= (finder 3 '(1 2 3 4 5) 0) 2)
 
-(definec replace-occurence (old :all new :all x :all) :all
-  (match x
-    (!old new)
-    (:atom x)
-    ((a . b) (cons (replace-occurence old new a)
-                   (replace-occurence old new b)))))
-(check= (replace-occurence 3 1 '(1 2 3 4)) '(1 2 1 4))#|ACL2s-ToDo-Line|#
+(check= (+ 1 (finder (first '(1 2 4)) '(1 3 5) 0)) 1)
+(check= (swapsp '((1 . 1))) t)
+;(check= '(1 . (+ 1 (finder (first '(1 2 4)) '(1 3 5) 0))) '(1 . 1)) ; returns false
+
+
+(definec replace-occurence (old :all new :all x :tl) :tl
+  (cond
+   ((lendp x) x)
+   ((== (first x) old) (cons new (rest x)))
+   (t (cons (first x)
+            (replace-occurence old new (rest x))))))
+(check= (replace-occurence 3 1 '(1 2 3 4)) '(1 2 1 4))
+(check= ( cons 1 (+ 1 (finder (first '(1 2 4)) '(1 3 5) 0))) '(1 . 1))
 
 
 (definec swaphelper (sofar :swaps x :tl y :tl depth :nat) :swaps
@@ -339,11 +347,20 @@ they are permutations of each other and nil otherwise.
    ((not (permp x y)) nil)
    ((and (lendp y) (lendp x)) sofar)
    ((equal (first x) (first y)) (swaphelper sofar (rest x) (rest y) (1+ depth)))
-   (t (swaphelper (append sofar (list '(depth . (+ depth (finder (first y) x)))))
+   (t (swaphelper (if (equal sofar nil) 
+                    (list (cons depth  (+ depth (finder (first y) x 0)))) 
+                    (append sofar (list (cons depth  (+ depth (finder (first y) x 0))))))
                   (replace-occurence (first y) (first x) (rest x))
                   (rest y)
                   (1+ depth)))))
 
 (definec find-swaps (x :tl y :tl) :swaps
-  ((swaphelper '() x y 0)))
+  (swaphelper '() x y 0))
 
+(check= (find-swaps '() '()) '())
+(check= (find-swaps '(1 2) '(2 1)) '((0 . 1)))
+(check= (find-swaps '(1 2 3 4) '(3 4 1 2)) '((0 . 2)(1 . 3)))
+(check= (find-swaps '(1 2 3) '(2 3 1)) '((0 . 1) (1 . 2)))#|ACL2s-ToDo-Line|#
+
+
+          
