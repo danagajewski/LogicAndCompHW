@@ -325,20 +325,24 @@ they are permutations of each other and nil otherwise.
    (t (finder element (rest l) (1+ acc)))))
 (check= (finder 3 '(1 2 3 4 5) 0) 2)
 
-(definec replacer (l :tl idx :nat new :all) :tl
-  (cond
-   ((lendp l) l)
-   ((equal idx 0) (append (list new) (rest l)))
-   (t (append (list (first l)) (replacer (rest l) (1- idx) new)))))
-(check= (replacer '(1 2 3 4) 2 1) '(1 2 1 4))#|ACL2s-ToDo-Line|#
+(definec replace-occurence (old :all new :all x :all) :all
+  (match x
+    (!old new)
+    (:atom x)
+    ((a . b) (cons (replace-occurence old new a)
+                   (replace-occurence old new b)))))
+(check= (replace-occurence 3 1 '(1 2 3 4)) '(1 2 1 4))#|ACL2s-ToDo-Line|#
 
 
 (definec swaphelper (sofar :swaps x :tl y :tl depth :nat) :swaps
   (cond 
    ((not (permp x y)) nil)
-   ((and (lendp x)) sofar)
-   ((equal (first x) (first y)) (swaphelper sofar (deleter (first x) x) (deleter (first y) y) (1+ depth)))
-   (t (swaphelper (append sofar (list '(depth . (+ depth (finder (first y) x))))) (replacer (append (list (first y)) x) (finder (first y) x 0) (first x)) y depth))))
+   ((and (lendp y) (lendp x)) sofar)
+   ((equal (first x) (first y)) (swaphelper sofar (rest x) (rest y) (1+ depth)))
+   (t (swaphelper (append sofar (list '(depth . (+ depth (finder (first y) x)))))
+                  (replace-occurence (first y) (first x) (rest x))
+                  (rest y)
+                  (1+ depth)))))
 
 (definec find-swaps (x :tl y :tl) :swaps
   ((swaphelper '() x y 0)))
