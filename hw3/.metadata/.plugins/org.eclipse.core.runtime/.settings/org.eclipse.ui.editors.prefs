@@ -1,0 +1,3 @@
+eclipse.preferences.version=1
+matchingBrackets=true
+quickdiff.defaultProvider=acl2s.plugin.editors.MyQuickDiffRefProvider
