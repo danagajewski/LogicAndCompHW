@@ -414,7 +414,8 @@
 (property (m :all)
           :hyps (not (memoryp m))
           (== (no-ddupsp m)
-              nil))
+              nil))#|ACL2s-ToDo-Line|#
+
 
 ; We are now going to write down some properties involving memories.
 ; I will be providing English descriptions of the properties and you
@@ -431,15 +432,15 @@
 ; them for generating automatic feedback in gradescope.
 "Property 1"
 
-(property (a :address d :data m :memory)
-  (<= (llen m)(llen (write-mem a d m))))
+(property ...
+  ...)
 
 ; Formalize the property:
 ; Reading from an address after writing to it gives the value written.
 "Property 2"
 
-(property (a :address d :data m :memory)
-  (== (read-mem a (write-mem a d m)) d))
+(property ...
+  ...)
 
 ; Fill in the ...'s so that you wind up with a true property.
 ; Your answer can only include the functions: if, == and read-mem.
@@ -449,17 +450,17 @@
 
 (property (a1 :address a2 :address d :data m :memory)
   (== (read-mem a1 (write-mem a2 d m))
-      (if (== a1 a2) d (read-mem a1 m))))
+      ...))
 
 ; Reading from (rev m) is not necessarily the same as reading from m.
 ; Replace the ...'s below to show an example. 
-(defconst *rev-counterexample* '((1 . 5)(2 . 4)(1 . 6)))
+(defconst *rev-counterexample* ...)
 
 
 (property ()
   (and (memoryp *rev-counterexample*)
-       (!= (read-mem 1 (rev *rev-counterexample*))
-           (read-mem 1 *rev-counterexample*))))
+       (!= (read-mem ... (rev *rev-counterexample*))
+           (read-mem ... *rev-counterexample*))))
 
 ; Formalize the property:
 ; Provide appropriate hypotheses that are as general as you can make
@@ -468,7 +469,7 @@
 "Property 4"
 
 (property (a :address m :memory)
-  :hyps (== (no-adupsp m) nil)
+  :hyps ...
   (== (read-mem a (rev m))
       (read-mem a m)))
 
@@ -481,33 +482,25 @@
 
 ; Add tests as per the instructions. 
 
-(check= (proper-memoryp nil) t)
-(check= (proper-memoryp '()) t)
-(check= (proper-memoryp '((1 . 5)(2 . 4))) t)
-(check= (proper-memoryp '((1 . 5)(1 . 4))) nil)
-(property (m :all)
-          :hyps (not (memoryp m))
-          (== (proper-memoryp m) nil))
+...
 
 ; Formalize the property:
 ; Writing to a proper-memory yields a proper memory.
 "Property 5"
 
-(property (a :address d :data m :memory)
-          :hyps (== (proper-memoryp m) t)
-          (== (proper-memoryp (write-mem a d m)) t))
+(property ...
+  ...)
 
 ; Formalize the property:
 ; The rev of a proper-memory is also a proper-memory.
 "Property 6"
 
-(property ( m :memory)
-          :hyps (== (proper-memoryp m) t)
-          (== (proper-memoryp (rev m)) t))
+(property ...
+  ...)
 
 ; A proper-memory may contain data duplicates.
 ; Replace the ... below to show an example.
-(defconst *proper-memory-with-data-dups* '((1 . 3)(2 . 3)))
+(defconst *proper-memory-with-data-dups* ...)
 
 (property ()
   (and (proper-memoryp *proper-memory-with-data-dups*)
@@ -518,13 +511,8 @@
 ; the contents of address a.
 "Property 7"
 
-(property (m1 :memory m2 :memory a :address d :data)
-          :hyps (and
-                 (proper-memoryp m1)
-                 (proper-memoryp m2)
-                 (in (cons a d) m1)
-                 (in (cons a d) m2))
-          (== (read-mem a m1) (read-mem a m2)))
+(property ...
+  ...)
 
 ; Formalize the property:
 ; The result of read-mem after writing to two distinct addresses of a
@@ -532,46 +520,15 @@
 ; written to.
 "Property 8"
 
-(property (m :memory a1 :address d1 :data a2 :address d2 :data)
-          :hyps (and
-                 (not (== a1 a1))
-                 (proper-memoryp m))
-          (== 
-           (read-mem a1 (write-mem a1 d1 (write-mem a2 d2 m)))
-           (read-mem a1 (write-mem a2 d2 (write-mem a1 d1 m)))))
+(property ...
+  ...)
 
 ; Define a function properfy that takes a memory m and returns a
 ; proper memory p such that (read-mem a m) = (read-mem a p) for all
 ; addresses a.
-(check= (memoryp nil) t)
-(check= (memoryp (append '((0 . 0)) (list (first '((0)(0)))))) t)
-(check= (app '((2 . 0)) (first nil)) '((2 . 0)))
-(check= (memoryp (append nil (list (first '((1 . 2)))))) t)
-(check= (first nil) nil)
-;(check= (memoryp (append '((11 . 0)) (list (first nil)))) t)
-
-(property (m :memory m2 :memory)
-          :hyps (not (== m2 nil))
-          (== (memoryp (append m (list (first m2)))) t))
-(check= (memoryp '()) t)
-
-(check= (memoryp nil) t)
-(check= (in '(1 . 3) nil) nil)#|ACL2s-ToDo-Line|#
-
-
-(definec properfyh (rem :memory sofar :memory)
-  (cond
-   ((lendp rem) sofar)
-   ((in (first rem) sofar) (properfy (rest rem) sofar))
-   (t '())))
-   ;(t (properfy (rest rem) (append sofar (list (first rem)))))))
 
 (definec properfy (m :memory) :memory
-  (cond
-   ((proper-memoryp m) m)
-   (== m nil) 
-   nil
-   
+  ...)
 
 ; Add tests as per the instructions. You do not have to add properties
 ; for properfy. We've got that covered below.
@@ -581,8 +538,8 @@
 ; Specify the property that properfy returns a proper memory.
 "Property 9"
 
-(property (m :memory)
-  (== (proper-memoryp (properfy m)) t))
+(property ...
+  ...)
 
 ; Specify the property that a properfied memory agrees with the
 ; original memory for any read.
