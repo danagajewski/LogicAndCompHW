@@ -582,7 +582,7 @@ Equational Reasoning Proof:
   (enum '(^ v => = <> !v !^)))
 
 (definec makeBoolFm (left :BoolFm op :BoolOp right :BoolFm) :BoolFm
-  (cons left (cons op (cons right nil))))
+  (list left op right ))
 
 
 
