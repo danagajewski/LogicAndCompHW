@@ -414,8 +414,7 @@ Equational Reasoning Proof:
 (property (p :bool q :bool r :bool)
           (==
            (nand p (=> q (nor p q)))
-           (v (! p) q)))#|ACL2s-ToDo-Line|#
-
+           (v (! p) q)))
 
 #|
 
@@ -457,12 +456,12 @@ Equational Reasoning Proof:
           (== 
            (nor (nand a b) (and (not a) c))
            (^ a b)))
-
+#|
 (property (a :bool b :bool c :bool)
           (==
            (and (=> a b) (=> (not c) a))
            (! (^ a b))))
-          
+   |#       
 ; The simplest equivalent formula is? Plug in your answer below using
 ; ACL2s connectives.
 
@@ -472,6 +471,7 @@ Equational Reasoning Proof:
 ; equivalence of your answer with the given formula. Note that this
 ; does not mean you have the simplest formula.
 "Property A4"
+#|
 (property (a :bool b :bool c :bool)
           (==
            (xor
@@ -481,7 +481,7 @@ Equational Reasoning Proof:
             (=> (! c) a)
             (^ a b))))
 
-
+|#
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Complete Boolean Bases
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -533,7 +533,14 @@ Equational Reasoning Proof:
     (:bool p)
     (:var (lookup p a))
     (('! q) (! (BfEval q a)))
-    XXX))
+    ((q '^ p) (and (BfEval q a) (BfEval p a)))
+    ((q 'v p) (or (BfEval q a) (BfEval p a)))
+    ((q '=> p) (=> (BfEval q a) (BfEval p a)))
+    ((q '= p) (equal (BfEval q a) (BfEval p a)))
+    ((q '<> p) (xor (BfEval q a) (BfEval p a)))
+    ((q '!v p) (nor (BfEval q a) (BfEval p a)))
+    ((q '!^ p) (nand (BfEval q a) (BfEval p a)))
+    ))
 
 ; This is a data definition for Boolean expressions consisting
 ; of only constants, variables and NORs.
@@ -563,7 +570,8 @@ Equational Reasoning Proof:
   (or bool 
       var 
       (list '! BoolFm1)
-      (list BoolFm1 (enum '(^ v => = <> !v)) BoolFm1)))
+      (list BoolFm1 (enum '(^ v => = <> !v)) BoolFm1)))#|ACL2s-ToDo-Line|#
+
 
 ; The second step is to define BoolFm->BoolFm1, a function that
 ; peforms pass 1 of the compiler.
@@ -571,8 +579,15 @@ Equational Reasoning Proof:
 (definec BoolFm->BoolFm1 (p :BoolFm) :BoolFm1
   (match p
     ((q '!^ r) (BoolFm->BoolFm1 `(! (,q ^ ,r))))
+    ((q 'v r) (append (BoolFm->BoolFm1 q) (list 'v) (BoolFm->BoolFm1 r)))
+    ((q '=> r) (append (BoolFm->BoolFm1 q) (list '=>) (BoolFm->BoolFm1 r)))
+    ((q '= r) (append (BoolFm->BoolFm1 q) (list '=) (BoolFm->BoolFm1 r)))
+    ((q '<> r) (append (BoolFm->BoolFm1 q) (list '<>) (BoolFm->BoolFm1 r)))
+    ((q '!v r) (append (BoolFm->BoolFm1 q) (list '!v) (BoolFm->BoolFm1 r)))
     (& p)))
 
+
+(check= (BoolFm->BoolFm1 '((p !^ q) = (p !^ q))) '((! (p ^ q)) = (! (p ^ q))))
 ; Make sure you understand the above. Why do we need the recursive
 ; call? Actually, the code isn't correct. Fix it. That is, modify it
 ; so that it does what it is supposed to. 
@@ -587,8 +602,13 @@ Equational Reasoning Proof:
 ; equivalence, as determined by BfEval.
 
 "Property 1"
-(property XXX)
-
+(property (p :BoolFm a :assignment)
+          (==
+           (BfEval p a)
+           (BfEval (BoolFm->BoolFm1 p) a)))
+          
+          
+          
 ; The tools lead is very happy with the above property, as it captures
 ; functional correctness. Expect a job offer once you graduate.
 
