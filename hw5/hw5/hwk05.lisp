@@ -581,20 +581,21 @@ Equational Reasoning Proof:
 (defdata BoolOp
   (enum '(^ v => = <> !v !^)))
 
-(definec makeBoolFm (left :BoolFm op :BoolOp right :BoolFm) :BoolFm
-  (list left op right ))
-
 
 
 (definec BoolFm->BoolFm1 (p :BoolFm) :BoolFm1
   (match p
-    ((q '!^ r) (BoolFm->BoolFm1 `(! (,q ^ ,r))))
-    ((q b r) (makeBoolFm (BoolFm->BoolFm1 q) b (BoolFm->BoolFm1 r)))
+    ((q '!^ r) (list '! (list (BoolFm->BoolFm1 q) '^ (BoolFm->BoolFm1 r))))
+    ((q b r) (list (BoolFm->BoolFm1 q) b (BoolFm->BoolFm1 r)))
+    (('! q) (list '! (BoolFm->BoolFm1 q)))
     (& p)))
 
-
-(check= (BoolFm->BoolFm1 '((p !^ q) = (p !^ q))) '((! (p ^ q)) = (! (p ^ q))))#|ACL2s-ToDo-Line|#
-
+(check= (BoolFm->BoolFm1 '((p !^ q) = (p !^ q))) '((! (p ^ q)) = (! (p ^ q))))
+(check= (BoolFm->BoolFm1 '((t !^ nil) !^ nil)) '(! ((! (t ^ nil)) ^ nil)))
+(check= (BoolFm->BoolFm1 'xxx) 'xxx)
+(check= (BoolFm->BoolFm1 '(! q)) '(! q))
+(check= (BoolFm->BoolFm1 '(! (p !^ q))) '(! (! (p ^ q))))
+(check= (BoolFm->BoolFm1 '(t !^ t)) '(! (t ^ t)))
 ; Make sure you understand the above. Why do we need the recursive
 ; call? Actually, the code isn't correct. Fix it. That is, modify it
 ; so that it does what it is supposed to. 
@@ -625,30 +626,111 @@ Equational Reasoning Proof:
 ; BoolFMi-1, returns an equivalent formula of type BoolFMi. Then, add
 ; a property capturing semantic equivalence.
 
-(defdata BoolFm2 XXX)
+(defdata BoolFm2
+  (or bool 
+      var 
+      (list '! BoolFm2)
+      (list BoolFm2 (enum '(^ v => = !v)) BoolFm2)))
 
-(definec BoolFm1->BoolFm2 XXX)
+(definec BoolFm1->BoolFm2 (p :BoolFm1) :BoolFm2
+  (match p
+    ((q '<> r) (list 
+                (list 
+                 (list '! (BoolFm1->BoolFm2 q)) 
+                 '^ 
+                 (BoolFm1->BoolFm2 r))
+                'v 
+                (list 
+                 (BoolFm1->BoolFm2 q) 
+                 '^ 
+                 (list '! (BoolFm1->BoolFm2 r)))))
+    ((q b r) (list (BoolFm1->BoolFm2 q) b (BoolFm1->BoolFm2 r)))
+    (('! q) (list '! (BoolFm1->BoolFm2 q)))
+    (& p)))
+
+(check= (BoolFm1->BoolFm2 '(T <> T)) '(((! T) ^ T) v (T ^ (! T))))
+(check= (BoolFm1->BoolFm2 '((q <> r) ^ r)) '((((! q) ^ r) v (q ^ (! r))) ^ r))
+(check= (BoolFm1->BoolFm2 'xxx) 'xxx)
+(check= (BoolFm1->BoolFm2 '(! (T <> T))) '(! (((! T) ^ T) v (T ^ (! T)))))
+(check= (BoolFm->BoolFm1 '(! q)) '(! q))
 
 "Property 2"
-(property XXX)
+(property (p :BoolFm1 a :assignment)
+          (==
+           (BfEval p a)
+           (BfEval (BoolFm1->BoolFm2 p) a)))
 
-(defdata BoolFm3 XXX)
+(defdata BoolFm3 
+  (or bool 
+      var 
+      (list '! BoolFm3)
+      (list BoolFm3 (enum '(^ v => !v)) BoolFm3)))
 
-(definec BoolFm2->BoolFm3 XXX)
 
+(definec BoolFm2->BoolFm3 (p :BoolFm2) :BoolFm3
+  (match p
+    ((q '= r) (list 
+               (list 
+                 (BoolFm2->BoolFm3 q) 
+                 '^ 
+                 (BoolFm2->BoolFm3 r))
+               'v
+               (list 
+                (list '! (BoolFm2->BoolFm3 q)) 
+                '^ 
+                (list '! (BoolFm2->BoolFm3 r)))))
+    ((q b r) (list (BoolFm2->BoolFm3 q) b (BoolFm2->BoolFm3 r)))
+    (('! q) (list '! (BoolFm2->BoolFm3 q)))
+    (& p)))
+(check= (BoolFm2->BoolFm3 '(T = T)) '((T ^ T) v ((! T) ^ (! T))))
+(check= (BoolFm2->BoolFm3 '((q = r) ^ r)) '(((q ^ r) v ((! q) ^ (! r))) ^ r))
+(check= (BoolFm2->BoolFm3 'xxx) 'xxx)
+(check= (BoolFm2->BoolFm3 '(! (T = T))) '(! ((T ^ T) v ((! T) ^ (! T)))))
+(check= (BoolFm2->BoolFm3 '(! q)) '(! q))
 "Property 3"
-(property XXX)
+(property (p :BoolFm2 a :assignment)
+          (==
+           (BfEval p a)
+           (BfEval (BoolFm2->BoolFm3 p) a)))
 
-(defdata BoolFm4 XXX)
+(defdata BoolFm4
+    (or bool 
+      var 
+      (list '! BoolFm4)
+      (list BoolFm4 (enum '(^ v !v)) BoolFm4)))
 
-(definec BoolFm3->BoolFm4 XXX)
+(definec BoolFm3->BoolFm4 (p :BoolFm3) :BoolFm4
+  (match p
+    ((q '=> r) (list (list '! (BoolFm3->BoolFm4 q)) 'v (BoolFm3->BoolFm4 r)))
+    ((q b r) (list (BoolFm3->BoolFm4 q) b (BoolFm3->BoolFm4 r)))
+    (('! q) (list '! (BoolFm3->BoolFm4 q)))
+    (& p)))
+(check= (BoolFm3->BoolFm4 '((p => q) v (p => q))) '(((! p) v q) v ((! p) v q)))
+(check= (BoolFm3->BoolFm4 '((t => nil) => nil)) '((! ((! t) v nil)) v nil))
+(check= (BoolFm3->BoolFm4 'xxx) 'xxx)
+(check= (BoolFm3->BoolFm4 '(! q)) '(! q))
+(check= (BoolFm3->BoolFm4 '(! (p => q))) '(! ((! p) v q)))
+(check= (BoolFm3->BoolFm4 '(t => t)) '((! t) v t))
 
 "Property 4"
-(property XXX)
+(property (p :BoolFm3 a :assignment)
+          (==
+           (BfEval p a)
+           (BfEval (BoolFm3->BoolFm4 p) a)))#|ACL2s-ToDo-Line|#
 
-(defdata BoolFm5 XXX)
 
-(definec BoolFm4->BoolFm5 XXX)
+(defdata BoolFm5 
+  (or bool 
+      var 
+      (list '! BoolFm5)
+      (list BoolFm5 (enum '(^ !v)) BoolFm5)))
+
+(definec BoolFm4->BoolFm5 (p :BoolFm4) :BoolFm5
+  (match p
+    ((q '=> r) ;this needs to be demorgans law. Not sure if we can use it but its the only thing that is even close. IM thingking it should be !(!q^!r)
+    ((q b r) (list (BoolFm4->BoolFm5 q) b (BoolFm4->BoolFm5 r)))
+    (('! q) (list '! (BoolFm4->BoolFm5 q)))
+    (& p)))
 
 "Property 5"
 (property XXX)
