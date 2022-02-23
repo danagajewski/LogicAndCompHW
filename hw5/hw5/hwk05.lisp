@@ -570,24 +570,31 @@ Equational Reasoning Proof:
   (or bool 
       var 
       (list '! BoolFm1)
-      (list BoolFm1 (enum '(^ v => = <> !v)) BoolFm1)))#|ACL2s-ToDo-Line|#
+      (list BoolFm1 (enum '(^ v => = <> !v)) BoolFm1)))
 
 
+;(check= (BoolFmp (append '(t v t) '('v) '(T v T))) t)
+;(check= (BoolFmp '(append '(t '^ t) (list 'v) '(t 'v t))) t)
 ; The second step is to define BoolFm->BoolFm1, a function that
 ; peforms pass 1 of the compiler.
+
+(defdata BoolOp
+  (enum '(^ v => = <> !v !^)))
+
+(definec makeBoolFm (left :BoolFm op :BoolOp right :BoolFm) :BoolFm
+  (cons left (cons op (cons right nil))))
+
+
 
 (definec BoolFm->BoolFm1 (p :BoolFm) :BoolFm1
   (match p
     ((q '!^ r) (BoolFm->BoolFm1 `(! (,q ^ ,r))))
-    ((q 'v r) (append (BoolFm->BoolFm1 q) (list 'v) (BoolFm->BoolFm1 r)))
-    ((q '=> r) (append (BoolFm->BoolFm1 q) (list '=>) (BoolFm->BoolFm1 r)))
-    ((q '= r) (append (BoolFm->BoolFm1 q) (list '=) (BoolFm->BoolFm1 r)))
-    ((q '<> r) (append (BoolFm->BoolFm1 q) (list '<>) (BoolFm->BoolFm1 r)))
-    ((q '!v r) (append (BoolFm->BoolFm1 q) (list '!v) (BoolFm->BoolFm1 r)))
+    ((q b r) (makeBoolFm (BoolFm->BoolFm1 q) b (BoolFm->BoolFm1 r)))
     (& p)))
 
 
-(check= (BoolFm->BoolFm1 '((p !^ q) = (p !^ q))) '((! (p ^ q)) = (! (p ^ q))))
+(check= (BoolFm->BoolFm1 '((p !^ q) = (p !^ q))) '((! (p ^ q)) = (! (p ^ q))))#|ACL2s-ToDo-Line|#
+
 ; Make sure you understand the above. Why do we need the recursive
 ; call? Actually, the code isn't correct. Fix it. That is, modify it
 ; so that it does what it is supposed to. 
